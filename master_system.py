@@ -5,7 +5,6 @@ import io
 import threading
 import logging
 from flask import Flask, Response
-# UPDATED IMPORT: Added 'Transform'
 from picamera2 import Picamera2
 
 # --- GLOBAL CONFIGURATION ---
@@ -20,12 +19,12 @@ app = Flask(__name__)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-print("Starting Camera (High Res + Flipped)...")
+print("Starting Camera (HD)...")
 picam2 = Picamera2()
 
+# Removed the 'transform' line that was causing the crash
 config = picam2.create_still_configuration(
-    main={"size": (1920, 1080)},
-    transform=3
+    main={"size": (1920, 1080)}
 )
 picam2.configure(config)
 picam2.start()
@@ -39,7 +38,6 @@ def generate_frames():
             frame = stream.read()
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-            # Increased delay slightly to handle the larger HD files
             time.sleep(0.05) 
         except:
             break
@@ -51,7 +49,7 @@ def index():
       <head><title>Pi Cam Control</title></head>
       <body style="background:#222; color:white; text-align:center;">
         <h1>Live Feed (HD)</h1>
-        <img src="/video_feed" style="border:2px solid #555; max-width: 90%; height: auto;" />
+        <img src="/video_feed" style="border:2px solid #555; max-width: 90%; height: auto; transform: rotate(180deg);" />
       </body>
     </html>
     """
