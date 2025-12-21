@@ -1,0 +1,5 @@
+pantilthat
+rpi-lgpio
+# Note: picamera2 is usually pre-installed on the system, 
+# but if you need a specific version or wrapper, list it here.
+# For now, we will rely on the system-site-packages.

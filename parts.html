@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project: Pan-Tilt Cam</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent: #00ff9d;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --btn-hover: #00cc7d;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-weight: 300;
+            letter-spacing: 1px;
+            margin-bottom: 40px;
+            color: var(--accent);
+            text-transform: uppercase;
+            border-bottom: 1px solid #333;
+            padding-bottom: 20px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #333;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .part-type {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            background-color: #333;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.25rem;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0 0 20px 0;
+            flex-grow: 1; /* Pushes button to bottom */
+        }
+
+        .specs {
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tag {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: #fff;
+        }
+
+        .buy-btn {
+            display: block;
+            width: 100%;
+            padding: 10px 0;
+            text-align: center;
+            background-color: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .buy-btn:hover {
+            background-color: var(--accent);
+            color: #000;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #555;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>System Hardware Inventory</h1>
+
+    <div class="grid-container">
+        
+        <div class="card">
+            <div class="card-header">
+                <span class="part-type">Compute Unit</span>
+            </div>
+            <h2>Raspberry Pi 5</h2>
+            <p>The central controller. Runs the Linux OS (Bookworm), hosts the Flask web server, and manages the camera stream processing.</p>
+            <div class="specs">
+                <span class="tag">Quad-core CPU</span>
+                <span class="tag">Dual Camera Ports</span>
+                <span class="tag">WiFi 5</span>
+            </div>
+            <a href="https://www.sparkfun.com/products/23551" target="_blank" class="buy-btn">View on SparkFun</a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="part-type">Actuator</span>
+            </div>
+            <h2>Pimoroni Pan-Tilt HAT</h2>
+            <p>Full kit (2056-1) mounted on the GPIO header. Provides 180° motion for both horizontal (Pan) and vertical (Tilt) tracking.</p>
+            <div class="specs">
+                <span class="tag">I2C Interface</span>
+                <span class="tag">2x Servos</span>
+                <span class="tag">PCA9685 Driver</span>
+            </div>
+            <a href="https://www.newark.com/pimoroni/pim183/pan-tilt-hat-kit/dp/62AC4634" target="_blank" class="buy-btn">View on Newark</a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="part-type">Sensor</span>
+            </div>
+            <h2>Inland 5MP Fisheye</h2>
+            <p>"Angel Eye" wide-angle lens using the OV5647 sensor. The fisheye optic provides a ~160° field of view, ideal for surveillance context.</p>
+            <div class="specs">
+                <span class="tag">OV5647 Sensor</span>
+                <span class="tag">1080p Video</span>
+                <span class="tag">Wide Angle</span>
+            </div>
+            <a href="https://www.microcenter.com/product/641973/inland-5mp-1080p-fish-eye-wide-angle-camera-for-raspberry-pi" target="_blank" class="buy-btn">View on Micro Center</a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="part-type">Adapter</span>
+            </div>
+            <h2>Pi 5 Camera Cable</h2>
+            <p>Critical adapter. Converts the new "Mini" 22-pin CSI connector on the Pi 5 to the "Standard" 15-pin connector on your camera.</p>
+            <div class="specs">
+                <span class="tag">22-pin to 15-pin</span>
+                <span class="tag">CSI / MIPI</span>
+                <span class="tag">300mm Length</span>
+            </div>
+            <a href="https://www.adafruit.com/product/5807" target="_blank" class="buy-btn">View on Adafruit</a>
+        </div>
+
+    </div>
+
+    <footer>
+        Generated for Pan-Tilt Project • Links open in new tab
+    </footer>
+
+</body>
+</html>
