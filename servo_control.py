@@ -3,39 +3,63 @@ import pantilthat
 import time
 
 # --- CONFIGURATION ---
-STEP = 2           # How many degrees to move per key press
-MIN_ANGLE = -90    # Safe limit (don't go below this)
-MAX_ANGLE = 90     # Safe limit (don't go above this)
+STEP = 2           # Degrees to move per key press
+MIN_ANGLE = -90    # Safe limit
+MAX_ANGLE = 90     # Safe limit
+SLEEP_DELAY = 0.02 # Speed of the smooth return (Lower is faster)
 
 # --- STATE VARIABLES ---
 current_pan = 0
 current_tilt = 0
 
 def clamp(n, minn, maxn):
-    """Keeps the value within the safe range."""
     return max(min(maxn, n), minn)
+
+def smooth_center(stdscr, start_pan, start_tilt):
+    """
+    Slowly moves servos from current position back to (0,0)
+    to avoid damaging the gears with a violent snap.
+    """
+    stdscr.addstr(8, 0, "PARKING SERVOS... PLEASE WAIT.")
+    stdscr.refresh()
+
+    p, t = start_pan, start_tilt
+    
+    # Loop until both are at 0
+    while p != 0 or t != 0:
+        # Move Pan towards 0
+        if p > 0: p -= 1
+        elif p < 0: p += 1
+        
+        # Move Tilt towards 0
+        if t > 0: t -= 1
+        elif t < 0: t += 1
+        
+        # Apply move
+        pantilthat.pan(p)
+        pantilthat.tilt(t)
+        time.sleep(SLEEP_DELAY)
 
 def main(stdscr):
     global current_pan, current_tilt
     
-    # Curses Setup (Hides cursor, enables instant key reading)
+    # Curses Setup
     stdscr.clear()
     curses.curs_set(0)
     stdscr.nodelay(True) 
 
-    # Initial Servo Move
+    # Initial Move (assumes we start at center or near it)
     pantilthat.pan(current_pan)
     pantilthat.tilt(current_tilt)
 
     while True:
-        # 1. DRAW THE INTERFACE
+        # 1. DRAW INTERFACE
         stdscr.erase()
         stdscr.addstr(0, 0, "--- PAN-TILT CONTROLLER ---")
         stdscr.addstr(1, 0, "Controls: WASD or ARROW KEYS")
-        stdscr.addstr(2, 0, "Press 'q' to Quit")
+        stdscr.addstr(2, 0, "Press 'q' to Quit and Park")
         stdscr.addstr(4, 0, "-" * 30)
         
-        # Draw visual bars for position
         stdscr.addstr(5, 0, f"PAN:  {current_pan:4}  [{'#' * int((current_pan+90)/10)}]")
         stdscr.addstr(6, 0, f"TILT: {current_tilt:4}  [{'#' * int((current_tilt+90)/10)}]")
         
@@ -46,27 +70,21 @@ def main(stdscr):
             key = -1
 
         if key == -1:
-            # No key pressed, just wait a tiny bit to save CPU
             time.sleep(0.05)
             continue
 
         # 3. HANDLE KEYS
         if key == ord('q'):
+            # Trigger the smooth parking before exiting
+            smooth_center(stdscr, current_pan, current_tilt)
             break
         
-        # Pan Left (Left Arrow or A) -> Increases angle (usually)
         elif key in [curses.KEY_LEFT, ord('a')]:
             current_pan += STEP
-            
-        # Pan Right (Right Arrow or D)
         elif key in [curses.KEY_RIGHT, ord('d')]:
             current_pan -= STEP
-            
-        # Tilt Down (Down Arrow or S)
         elif key in [curses.KEY_DOWN, ord('s')]:
             current_tilt += STEP
-            
-        # Tilt Up (Up Arrow or W)
         elif key in [curses.KEY_UP, ord('w')]:
             current_tilt -= STEP
 
@@ -77,5 +95,4 @@ def main(stdscr):
         pantilthat.pan(current_pan)
         pantilthat.tilt(current_tilt)
 
-# Wrapper handles clean startup and exit of the terminal GUI
 curses.wrapper(main)
