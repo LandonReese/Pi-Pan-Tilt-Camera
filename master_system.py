@@ -5,7 +5,8 @@ import io
 import threading
 import logging
 from flask import Flask, Response
-from picamera2 import Picamera2
+# UPDATED IMPORT: Added 'Transform'
+from picamera2 import Picamera2, Transform
 
 # --- GLOBAL CONFIGURATION ---
 STEP = 2           
@@ -16,13 +17,19 @@ SLEEP_DELAY = 0.02
 # --- FLASK & CAMERA SETUP ---
 app = Flask(__name__)
 
-# Suppress Flask logging (so it doesn't garble the Curses screen)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-print("Starting Camera (this takes 2-3 seconds)...")
+print("Starting Camera (High Res + Flipped)...")
 picam2 = Picamera2()
-config = picam2.create_still_configuration(main={"size": (640, 480)})
+
+# UPDATED CONFIGURATION:
+# 1. Changed size to (1280, 720) for HD
+# 2. Added transform=Transform.ROT180 to flip the image correctly
+config = picam2.create_still_configuration(
+    main={"size": (1280, 720)},
+    transform=Transform.ROT180
+)
 picam2.configure(config)
 picam2.start()
 
@@ -35,6 +42,7 @@ def generate_frames():
             frame = stream.read()
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            # Increased delay slightly to handle the larger HD files
             time.sleep(0.05) 
         except:
             break
@@ -45,8 +53,8 @@ def index():
     <html>
       <head><title>Pi Cam Control</title></head>
       <body style="background:#222; color:white; text-align:center;">
-        <h1>Live Feed</h1>
-        <img src="/video_feed" style="border:2px solid #555; width:80%;" />
+        <h1>Live Feed (HD)</h1>
+        <img src="/video_feed" style="border:2px solid #555; max-width: 90%; height: auto;" />
       </body>
     </html>
     """
@@ -56,7 +64,6 @@ def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 def run_flask():
-    # Run Flask on port 5000
     app.run(host='0.0.0.0', port=5000, threaded=True, debug=False, use_reloader=False)
 
 # --- SERVO CONTROL LOGIC ---
@@ -86,12 +93,10 @@ def servo_loop(stdscr):
     curses.curs_set(0)
     stdscr.nodelay(True) 
 
-    # Initial Move
     pantilthat.pan(current_pan)
     pantilthat.tilt(current_tilt)
 
     while True:
-        # Interface
         stdscr.erase()
         stdscr.addstr(0, 0, "--- PI 5 MASTER CONTROL SYSTEM ---")
         stdscr.addstr(1, 0, "Camera Stream Running: http://<YOUR_PI_IP>:5000")
@@ -115,7 +120,6 @@ def servo_loop(stdscr):
             smooth_center(stdscr, current_pan, current_tilt)
             break
         
-        # Movement Logic
         elif key in [curses.KEY_LEFT, ord('a')]:
             current_pan += STEP
         elif key in [curses.KEY_RIGHT, ord('d')]:
@@ -133,17 +137,14 @@ def servo_loop(stdscr):
 
 # --- MAIN EXECUTION ---
 if __name__ == "__main__":
-    # 1. Start Flask in a separate thread (Daemon mode kills it when main script ends)
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.daemon = True 
     flask_thread.start()
 
-    # 2. Start the Control Loop (Main Thread)
     try:
         curses.wrapper(servo_loop)
     except KeyboardInterrupt:
         pass
     finally:
-        # Cleanup
         picam2.stop()
         print("\nSystem Shutdown Complete.")
