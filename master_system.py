@@ -6,7 +6,7 @@ import threading
 import logging
 from flask import Flask, Response
 # UPDATED IMPORT: Added 'Transform'
-from picamera2 import Picamera2, Transform
+from picamera2 import Picamera2
 
 # --- GLOBAL CONFIGURATION ---
 STEP = 2           
@@ -23,12 +23,9 @@ log.setLevel(logging.ERROR)
 print("Starting Camera (High Res + Flipped)...")
 picam2 = Picamera2()
 
-# UPDATED CONFIGURATION:
-# 1. Changed size to (1280, 720) for HD
-# 2. Added transform=Transform.ROT180 to flip the image correctly
 config = picam2.create_still_configuration(
-    main={"size": (1280, 720)},
-    transform=Transform.ROT180
+    main={"size": (1920, 1080)},
+    transform=3
 )
 picam2.configure(config)
 picam2.start()
