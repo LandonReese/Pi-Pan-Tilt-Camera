@@ -1,3 +1,5 @@
+import os
+import datetime
 import time
 import io
 import threading
@@ -29,6 +31,9 @@ picam2 = Picamera2()
 config = picam2.create_still_configuration(main={"size": (1280, 720)})
 picam2.configure(config)
 picam2.start()
+# --- CREATE SCREENSHOTS IF NOT EXISTS ---
+if not os.pash.exists('screenshots'):
+    os.makedirs('screenshots')
 
 # --- HARDWARE FUNCTIONS ---
 def clamp(n, minn, maxn):
@@ -93,6 +98,12 @@ def index():
             .btn { background: #444; color: white; border: none; padding: 15px; font-size: 20px; border-radius: 10px; cursor: pointer; touch-action: manipulation; }
             .btn:active { background: #00d2ff; color: black; }
             .btn-center { background: #d9534f; font-weight: bold; font-size: 14px; }
+            
+            /* SNAPSHOT BUTTON STYLE */
+            .action-area { margin-top: 20px; }
+            .btn-snap { background: #28a745; width: 260px; padding: 15px; font-weight: bold; font-size: 16px; }
+            .btn-snap:active { background: #45e06a; }
+            
             .hidden { visibility: hidden; }
         </style>
     </head>
@@ -116,6 +127,10 @@ def index():
             <button class="btn" onmousedown="move('down')" ontouchstart="move('down')">▼</button>
             <button class="btn hidden"></button>
         </div>
+
+        <div class="action-area">
+            <button class="btn btn-snap" onclick="snapshot()">📸 TAKE SCREENSHOT</button>
+        </div>
         
         <p style="color: #888; font-size: 0.9rem;">Controls: WASD, Arrows, or Touch</p>
 
@@ -130,9 +145,22 @@ def index():
                 fetch('/api/reset');
             }
 
+            // NEW SNAPSHOT FUNCTION
+            function snapshot() {
+                fetch('/api/snapshot')
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        alert("Screenshot saved!");
+                    } else {
+                        alert("Error taking screenshot");
+                    }
+                });
+            }
+
             // Keyboard Listeners
             document.addEventListener('keydown', (e) => {
-                if (e.repeat) return; // Prevent key holding from spamming too hard
+                if (e.repeat) return; 
                 
                 switch(e.key) {
                     case "ArrowUp":
@@ -151,6 +179,9 @@ def index():
                     case "d":
                     case "D":
                         move('right'); break;
+                    // Optional: Spacebar to take screenshot
+                    case " ":
+                        snapshot(); break;
                 }
             });
         </script>
@@ -191,6 +222,21 @@ def api_reset():
     # Run the slow reset in a separate thread so it doesn't freeze the video
     threading.Thread(target=smooth_reset_logic).start()
     return jsonify(success=True)
+
+@app.route('/api/snapshot')
+def api_snapshot():
+    # Generate a unique filename based on time
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    filename = f"screenshots/snap_{timestamp}.jpg"
+    
+    try:
+        # Capture the image using the existing picam2 instance
+        picam2.capture_file(filename)
+        print(f"Snapshot saved: {filename}")
+        return jsonify(success=True, file=filename)
+    except Exception as e:
+        print(f"Snapshot failed: {e}")
+        return jsonify(success=False, error=str(e))
 
 if __name__ == "__main__":
     try:
