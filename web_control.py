@@ -5,6 +5,7 @@ import io
 import threading
 import logging
 import pantilthat
+from PIL import Image  # NEW: Library to handle image rotation
 from flask import Flask, Response, render_template, request, jsonify, url_for, send_from_directory
 from picamera2 import Picamera2
 
@@ -82,18 +83,15 @@ def smooth_reset_logic():
 
 @app.route('/')
 def index():
-    # Renders templates/index.html
     return render_template('index.html')
 
 @app.route('/gallery')
 def gallery():
-    # Renders templates/gallery.html with a list of images (newest first)
     images = sorted(os.listdir('screenshots'), reverse=True)
     return render_template('gallery.html', images=images)
 
 @app.route('/screenshots/<path:filename>')
 def serve_screenshot(filename):
-    # Allows the browser to actually download/view the image file
     return send_from_directory('screenshots', filename)
 
 @app.route('/video_feed')
@@ -126,20 +124,27 @@ def api_move():
 
 @app.route('/api/reset')
 def api_reset():
-    # Run the slow reset in a separate thread so it doesn't freeze the video
     threading.Thread(target=smooth_reset_logic).start()
     return jsonify(success=True)
 
 @app.route('/api/snapshot')
 def api_snapshot():
-    # Generate a unique filename based on time
+    # Generate a unique filename
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"screenshots/snap_{timestamp}.jpg"
     
     try:
-        # Capture the image using the existing picam2 instance
-        picam2.capture_file(filename)
-        print(f"Snapshot saved: {filename}")
+        # 1. Capture raw image to memory (this is upside down)
+        stream = io.BytesIO()
+        picam2.capture_file(stream, format='jpeg')
+        stream.seek(0)
+        
+        # 2. Open with Pillow, Rotate, and Save
+        image = Image.open(stream)
+        image = image.rotate(180)  # Flips it upright
+        image.save(filename)
+        
+        print(f"Snapshot saved (Rotated 180): {filename}")
         return jsonify(success=True, file=filename)
     except Exception as e:
         print(f"Snapshot failed: {e}")
@@ -147,13 +152,11 @@ def api_snapshot():
 
 if __name__ == "__main__":
     try:
-        # Initial Center
         move_servos(0, 0)
         app.run(host='0.0.0.0', port=5000, threaded=True, debug=False)
     except KeyboardInterrupt:
         pass
     finally:
         picam2.stop()
-        # Final Park on Exit
         smooth_reset_logic()
         print("System Shutdown.")
