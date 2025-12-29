@@ -32,7 +32,7 @@ config = picam2.create_still_configuration(main={"size": (1280, 720)})
 picam2.configure(config)
 picam2.start()
 # --- CREATE SCREENSHOTS IF NOT EXISTS ---
-if not os.pash.exists('screenshots'):
+if not os.path.exists('screenshots'):
     os.makedirs('screenshots')
 
 # --- HARDWARE FUNCTIONS ---
