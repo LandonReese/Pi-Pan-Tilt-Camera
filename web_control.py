@@ -150,6 +150,26 @@ def api_snapshot():
         print(f"Snapshot failed: {e}")
         return jsonify(success=False, error=str(e))
 
+@app.route('/api/delete')
+def api_delete():
+    filename = request.args.get('file')
+    
+    # Simple security check to prevent directory traversal (deleting files outside the folder)
+    if not filename or '/' in filename or '\\' in filename:
+        return jsonify(success=False, error="Invalid filename")
+
+    filepath = os.path.join('screenshots', filename)
+    
+    if os.path.exists(filepath):
+        try:
+            os.remove(filepath)
+            print(f"Deleted: {filepath}")
+            return jsonify(success=True)
+        except Exception as e:
+            return jsonify(success=False, error=str(e))
+            
+    return jsonify(success=False, error="File not found")
+
 if __name__ == "__main__":
     try:
         move_servos(0, 0)

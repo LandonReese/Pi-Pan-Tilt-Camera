@@ -15,7 +15,7 @@
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
+            gap: 20px;
             padding: 20px;
             max-width: 1200px;
             margin: 0 auto;
@@ -26,20 +26,48 @@
             padding: 10px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
         }
 
         .card img {
             width: 100%;
             height: auto;
             border-radius: 4px;
+            cursor: pointer;
         }
 
         .filename {
-            margin-top: 10px;
+            margin: 10px 0;
             font-size: 0.8rem;
             color: #ccc;
             word-wrap: break-word;
         }
+
+        /* BUTTON ROW STYLING */
+        .actions {
+            margin-top: auto; /* Pushes buttons to bottom of card */
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-dl, .btn-del {
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .btn-dl { background-color: #007bff; }
+        .btn-dl:hover { background-color: #0056b3; }
+
+        .btn-del { background-color: #dc3545; }
+        .btn-del:hover { background-color: #a71d2a; }
         
         .empty-msg { margin-top: 50px; color: #666; font-size: 1.2rem; }
     </style>
@@ -56,17 +84,49 @@
     {% if images %}
         <div class="gallery-grid">
             {% for img in images %}
-                <div class="card">
+                <div class="card" id="card-{{ loop.index }}">
                     <a href="{{ url_for('serve_screenshot', filename=img) }}">
                         <img src="{{ url_for('serve_screenshot', filename=img) }}" loading="lazy">
                     </a>
+                    
                     <div class="filename">{{ img }}</div>
+
+                    <div class="actions">
+                        <a href="{{ url_for('serve_screenshot', filename=img) }}" download="{{ img }}" class="btn-dl">
+                            ⬇ Download
+                        </a>
+
+                        <button class="btn-del" onclick="deleteImage('{{ img }}', 'card-{{ loop.index }}')">
+                            🗑 Delete
+                        </button>
+                    </div>
                 </div>
             {% endfor %}
         </div>
     {% else %}
         <div class="empty-msg">No screenshots found. Go take some!</div>
     {% endif %}
+
+    <script>
+        function deleteImage(filename, cardId) {
+            // 1. Confirm with user
+            if (confirm("Are you sure you want to delete " + filename + "?")) {
+                
+                // 2. Call Python API
+                fetch('/api/delete?file=' + filename)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 3. Remove the card from the screen immediately
+                        document.getElementById(cardId).remove();
+                    } else {
+                        alert("Error deleting file: " + data.error);
+                    }
+                })
+                .catch(err => alert("Network error: " + err));
+            }
+        }
+    </script>
 
 </body>
 </html>
