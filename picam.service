@@ -1,0 +1,15 @@
+[Unit]
+Description=Pi Pan-Tilt Camera Web Server
+After=network.target
+
+[Service]
+User=annie
+Group=annie
+WorkingDirectory=/home/annie/Pi-Pan-Tilt-Camera
+# We use the python inside your 'env' so it finds pantilthat & flask
+ExecStart=/home/annie/env/bin/python web_control.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
