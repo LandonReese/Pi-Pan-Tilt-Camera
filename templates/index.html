@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pi 5 Robot Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { background-color: #222; color: white; font-family: sans-serif; text-align: center; user-select: none; margin: 0; }
+        
+        /* NAVIGATION HEADER */
+        .nav { background: #333; padding: 15px; border-bottom: 2px solid #444; margin-bottom: 20px; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 1.2rem; margin: 0 15px; font-weight: bold; }
+        .nav a.active { color: #00d2ff; border-bottom: 2px solid #00d2ff; }
+        .nav a:hover { color: white; }
+
+        h1 { margin: 10px; font-size: 1.5rem; }
+        #video-container { position: relative; display: inline-block; margin-bottom: 20px; }
+        img.stream { border: 2px solid #555; max-width: 95%; height: auto; transform: rotate(180deg); border-radius: 8px; }
+        
+        .controls { display: grid; grid-template-columns: 80px 80px 80px; gap: 10px; justify-content: center; margin-top: 10px; }
+        .btn { background: #444; color: white; border: none; padding: 15px; font-size: 20px; border-radius: 10px; cursor: pointer; touch-action: manipulation; }
+        .btn:active { background: #00d2ff; color: black; }
+        .btn-center { background: #d9534f; font-weight: bold; font-size: 14px; }
+        
+        .action-area { margin-top: 20px; padding-bottom: 30px;}
+        .btn-snap { background: #28a745; width: 260px; padding: 15px; font-weight: bold; font-size: 16px; border: none; border-radius: 8px; color: white; cursor: pointer; }
+        .btn-snap:active { background: #45e06a; }
+        
+        .hidden { visibility: hidden; }
+    </style>
+</head>
+<body>
+
+    <div class="nav">
+        <a href="/" class="active">Live Camera</a>
+        <a href="/gallery">Gallery</a>
+    </div>
+
+    <h1>Command Center</h1>
+    
+    <div id="video-container">
+        <img class="stream" src="{{ url_for('video_feed') }}" />
+    </div>
+
+    <div class="controls">
+        <button class="btn hidden"></button>
+        <button class="btn" onmousedown="move('up')" ontouchstart="move('up')">▲</button>
+        <button class="btn hidden"></button>
+        
+        <button class="btn" onmousedown="move('left')" ontouchstart="move('left')">◀</button>
+        <button class="btn btn-center" onclick="reset()">CENTER</button>
+        <button class="btn" onmousedown="move('right')" ontouchstart="move('right')">▶</button>
+        
+        <button class="btn hidden"></button>
+        <button class="btn" onmousedown="move('down')" ontouchstart="move('down')">▼</button>
+        <button class="btn hidden"></button>
+    </div>
+
+    <div class="action-area">
+        <button class="btn btn-snap" onclick="snapshot()">📸 TAKE SCREENSHOT</button>
+    </div>
+
+    <script>
+        function move(direction) { fetch('/api/move?dir=' + direction); }
+        function reset() { fetch('/api/reset'); }
+        function snapshot() {
+            fetch('/api/snapshot')
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) { alert("Screenshot saved!"); } 
+                else { alert("Error taking screenshot"); }
+            });
+        }
+        document.addEventListener('keydown', (e) => {
+            if (e.repeat) return; 
+            switch(e.key) {
+                case "ArrowUp": case "w": case "W": move('up'); break;
+                case "ArrowDown": case "s": case "S": move('down'); break;
+                case "ArrowLeft": case "a": case "A": move('left'); break;
+                case "ArrowRight": case "d": case "D": move('right'); break;
+                case " ": snapshot(); break;
+            }
+        });
+    </script>
+</body>
+</html>

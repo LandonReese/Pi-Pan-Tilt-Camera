@@ -5,11 +5,11 @@ import io
 import threading
 import logging
 import pantilthat
-from flask import Flask, Response, render_template_string, request, jsonify
+from flask import Flask, Response, render_template, request, jsonify, url_for, send_from_directory
 from picamera2 import Picamera2
 
 # --- CONFIGURATION ---
-STEP = 5           # Bigger step since HTTP requests are slightly slower than local keys
+STEP = 5           # Degrees to move per key press
 MIN_ANGLE = -90    
 MAX_ANGLE = 90     
 SLEEP_DELAY = 0.02 # Speed of the smooth movement
@@ -31,7 +31,8 @@ picam2 = Picamera2()
 config = picam2.create_still_configuration(main={"size": (1280, 720)})
 picam2.configure(config)
 picam2.start()
-# --- CREATE SCREENSHOTS IF NOT EXISTS ---
+
+# --- CREATE SCREENSHOTS FOLDER ---
 if not os.path.exists('screenshots'):
     os.makedirs('screenshots')
 
@@ -81,113 +82,19 @@ def smooth_reset_logic():
 
 @app.route('/')
 def index():
-    # HTML + JS User Interface
-    return """
-    <html>
-    <head>
-        <title>Pi 5 Robot Control</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-            body { background-color: #222; color: white; font-family: sans-serif; text-align: center; user-select: none; }
-            h1 { margin: 10px; font-size: 1.5rem; }
-            #video-container { position: relative; display: inline-block; margin-bottom: 20px; }
-            img { border: 2px solid #555; max-width: 95%; height: auto; transform: rotate(180deg); border-radius: 8px; }
-            
-            /* D-PAD STYLING */
-            .controls { display: grid; grid-template-columns: 80px 80px 80px; gap: 10px; justify-content: center; margin-top: 10px; }
-            .btn { background: #444; color: white; border: none; padding: 15px; font-size: 20px; border-radius: 10px; cursor: pointer; touch-action: manipulation; }
-            .btn:active { background: #00d2ff; color: black; }
-            .btn-center { background: #d9534f; font-weight: bold; font-size: 14px; }
-            
-            /* SNAPSHOT BUTTON STYLE */
-            .action-area { margin-top: 20px; }
-            .btn-snap { background: #28a745; width: 260px; padding: 15px; font-weight: bold; font-size: 16px; }
-            .btn-snap:active { background: #45e06a; }
-            
-            .hidden { visibility: hidden; }
-        </style>
-    </head>
-    <body>
-        <h1>Pi 5 Command Center</h1>
-        
-        <div id="video-container">
-            <img src="/video_feed" />
-        </div>
+    # Renders templates/index.html
+    return render_template('index.html')
 
-        <div class="controls">
-            <button class="btn hidden"></button>
-            <button class="btn" onmousedown="move('up')" ontouchstart="move('up')">▲</button>
-            <button class="btn hidden"></button>
-            
-            <button class="btn" onmousedown="move('left')" ontouchstart="move('left')">◀</button>
-            <button class="btn btn-center" onclick="reset()">CENTER</button>
-            <button class="btn" onmousedown="move('right')" ontouchstart="move('right')">▶</button>
-            
-            <button class="btn hidden"></button>
-            <button class="btn" onmousedown="move('down')" ontouchstart="move('down')">▼</button>
-            <button class="btn hidden"></button>
-        </div>
+@app.route('/gallery')
+def gallery():
+    # Renders templates/gallery.html with a list of images (newest first)
+    images = sorted(os.listdir('screenshots'), reverse=True)
+    return render_template('gallery.html', images=images)
 
-        <div class="action-area">
-            <button class="btn btn-snap" onclick="snapshot()">📸 TAKE SCREENSHOT</button>
-        </div>
-        
-        <p style="color: #888; font-size: 0.9rem;">Controls: WASD, Arrows, or Touch</p>
-
-        <script>
-            // JAVASCRIPT LOGIC
-            
-            function move(direction) {
-                fetch('/api/move?dir=' + direction);
-            }
-
-            function reset() {
-                fetch('/api/reset');
-            }
-
-            // NEW SNAPSHOT FUNCTION
-            function snapshot() {
-                fetch('/api/snapshot')
-                .then(response => response.json())
-                .then(data => {
-                    if(data.success) {
-                        alert("Screenshot saved!");
-                    } else {
-                        alert("Error taking screenshot");
-                    }
-                });
-            }
-
-            // Keyboard Listeners
-            document.addEventListener('keydown', (e) => {
-                if (e.repeat) return; 
-                
-                switch(e.key) {
-                    case "ArrowUp":
-                    case "w":
-                    case "W":
-                        move('up'); break;
-                    case "ArrowDown":
-                    case "s":
-                    case "S":
-                        move('down'); break;
-                    case "ArrowLeft":
-                    case "a":
-                    case "A":
-                        move('left'); break;
-                    case "ArrowRight":
-                    case "d":
-                    case "D":
-                        move('right'); break;
-                    // Optional: Spacebar to take screenshot
-                    case " ":
-                        snapshot(); break;
-                }
-            });
-        </script>
-    </body>
-    </html>
-    """
+@app.route('/screenshots/<path:filename>')
+def serve_screenshot(filename):
+    # Allows the browser to actually download/view the image file
+    return send_from_directory('screenshots', filename)
 
 @app.route('/video_feed')
 def video_feed():

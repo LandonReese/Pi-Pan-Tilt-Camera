@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gallery - Pi 5</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { background-color: #222; color: white; font-family: sans-serif; text-align: center; margin: 0; }
+        
+        /* NAV HEADER */
+        .nav { background: #333; padding: 15px; border-bottom: 2px solid #444; margin-bottom: 20px; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 1.2rem; margin: 0 15px; font-weight: bold; }
+        .nav a.active { color: #00d2ff; border-bottom: 2px solid #00d2ff; }
+        .nav a:hover { color: white; }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #333;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .card img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            /* Remove the rotation below if your saved images are already correct, 
+               but usually they need the same flip as the live feed */
+            transform: rotate(180deg); 
+        }
+
+        .filename {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #ccc;
+            word-wrap: break-word;
+        }
+        
+        .empty-msg { margin-top: 50px; color: #666; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <div class="nav">
+        <a href="/">Live Camera</a>
+        <a href="/gallery" class="active">Gallery</a>
+    </div>
+
+    <h1>Saved Snapshots</h1>
+
+    {% if images %}
+        <div class="gallery-grid">
+            {% for img in images %}
+                <div class="card">
+                    <a href="{{ url_for('serve_screenshot', filename=img) }}">
+                        <img src="{{ url_for('serve_screenshot', filename=img) }}" loading="lazy">
+                    </a>
+                    <div class="filename">{{ img }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-msg">No screenshots found. Go take some!</div>
+    {% endif %}
+
+</body>
+</html>
